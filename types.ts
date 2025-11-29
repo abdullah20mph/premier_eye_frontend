@@ -34,6 +34,14 @@ export type EmailLog = {
 
 export type LocationOption = "Plantation" | "Boca Raton" | "West Palm";
 
+export type PipelineStage =
+  | "NEW_LEAD"
+  | "AI_ENGAGING"
+  | "NEEDS_ACTION"
+  | "BOOKED"
+  | "COMPLETED_PAID";
+
+
 export type Lead = {
   id: string;
   name: string;
@@ -45,6 +53,7 @@ export type Lead = {
   dob?: string;
   insurance?: string | null;
   status: LeadStatus;
+  pipelineStage?: PipelineStage; 
   appointmentDate?: string | null;
   service?: string | null;
   saleAmount?: number | null;

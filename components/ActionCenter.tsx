@@ -38,7 +38,7 @@ export default function ActionCenter({ leads, onReview }: Props) {
   };
 
   return (
-    <section className="mb-6 md:mb-10 animate-in fade-in slide-in-from-top-4 duration-700">
+    <section className="mb-6 md:mb-10 animate-in fade-in slide-in-from-top-4 duration-700 ">
       
       {/* Minimal Header */}
       <div className="flex items-center justify-between mb-4 px-1">

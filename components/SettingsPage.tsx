@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Lock, Mail, Save, CheckCircle2 } from 'lucide-react';
+import api from '../services/client';
 
 export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [profile, setProfile] = useState({
     displayName: 'Dr. Smith',
-    email: 'dr.smith@agentum.ai'
+    email: 'dr.smith@agentum.ai',
   });
 
   const [security, setSecurity] = useState({
@@ -16,136 +18,227 @@ export default function SettingsPage() {
     newPassword: '',
   });
 
-  const handleSave = (e: React.FormEvent) => {
+  // --- Load profile on mount ---
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await api.get('/user/settings/profile');
+        const data = res.data?.data || {};
+
+        setProfile({
+          displayName: data.display_name ?? '',
+          email: data.email ?? '',
+        });
+
+        setSecurity((prev) => ({
+          ...prev,
+          username: data.username ?? '',
+        }));
+      } catch (err: any) {
+        console.error('Failed to load profile', err);
+        setError(
+          err?.response?.data?.message || 'Failed to load profile information.'
+        );
+      }
+    })();
+  }, []);
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+    setShowSuccess(false);
+    setError(null);
+
+    try {
+      // 1) Update profile (display_name, email, username)
+      await api.patch('/user/settings/profile', {
+        display_name: profile.displayName,
+        email: profile.email,
+        username: security.username,
+      });
+
+      // 2) Update password only if newPassword is provided
+      if (security.newPassword.trim()) {
+        await api.patch('/user/settings/password', {
+          current_password: security.currentPassword,
+          new_password: security.newPassword,
+        });
+
+        // Clear password fields after successful change
+        setSecurity((prev) => ({
+          ...prev,
+          currentPassword: '',
+          newPassword: '',
+        }));
+      }
+
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
-    }, 1500);
+    } catch (err: any) {
+      console.error('Save settings error:', err);
+      setError(
+        err?.response?.data?.message ||
+          'Failed to save settings. Please try again.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="max-w-3xl mx-auto h-full overflow-y-auto custom-scrollbar pb-20 pt-4">
-      
-      <div className="flex items-center justify-between mb-12">
+      <div className="flex items-center justify-between mb-6">
         <div>
-            <h1 className="text-3xl font-bold text-brand-black tracking-tight">Account Settings</h1>
-            <p className="text-gray-500 mt-2">Manage your profile details and security.</p>
+          <h1 className="text-3xl font-bold text-brand-black tracking-tight">
+            Account Settings
+          </h1>
+          <p className="text-gray-500 mt-2">
+            Manage your profile details and security.
+          </p>
         </div>
         {showSuccess && (
-            <div className="flex items-center gap-2 text-green-600 bg-green-50 px-4 py-2 rounded-full text-sm font-bold animate-in fade-in slide-in-from-right-4">
-                <CheckCircle2 className="w-4 h-4" />
-                Saved
-            </div>
+          <div className="flex items-center gap-2 text-green-600 bg-green-50 px-4 py-2 rounded-full text-sm font-bold animate-in fade-in slide-in-from-right-4">
+            <CheckCircle2 className="w-4 h-4" />
+            Saved
+          </div>
         )}
       </div>
 
+      {/* Error banner */}
+      {error && (
+        <div className="mb-6 px-4 py-3 rounded-lg bg-red-50 text-red-700 text-sm font-medium">
+          {error}
+        </div>
+      )}
+
       <form onSubmit={handleSave} className="space-y-12">
-        
         {/* Profile Section */}
         <section>
-            <h2 className="text-lg font-bold text-brand-black mb-6 border-b border-gray-100 pb-2">
-                Profile Information
-            </h2>
-            
-            <div className="grid grid-cols-1 gap-6">
-                <div className="group">
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 group-focus-within:text-brand-blue transition-colors">Display Name</label>
-                    <div className="relative">
-                        <input 
-                            className="w-full p-3 bg-transparent border-b border-gray-200 focus:border-brand-blue outline-none transition text-brand-black text-lg placeholder-gray-300 font-medium"
-                            value={profile.displayName}
-                            onChange={(e) => setProfile({...profile, displayName: e.target.value})}
-                        />
-                        <User className="absolute right-2 top-3 w-5 h-5 text-gray-300" />
-                    </div>
-                </div>
+          <h2 className="text-lg font-bold text-brand-black mb-6 border-b border-gray-100 pb-2">
+            Profile Information
+          </h2>
 
-                <div className="group">
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 group-focus-within:text-brand-blue transition-colors">Email Address</label>
-                    <div className="relative">
-                        <input 
-                            type="email"
-                            className="w-full p-3 bg-transparent border-b border-gray-200 focus:border-brand-blue outline-none transition text-brand-black text-lg placeholder-gray-300 font-medium"
-                            value={profile.email}
-                            onChange={(e) => setProfile({...profile, email: e.target.value})}
-                        />
-                        <Mail className="absolute right-2 top-3 w-5 h-5 text-gray-300" />
-                    </div>
-                </div>
+          <div className="grid grid-cols-1 gap-6">
+            <div className="group">
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 group-focus-within:text-brand-blue transition-colors">
+                Display Name
+              </label>
+              <div className="relative">
+                <input
+                  className="w-full p-3 bg-transparent border-b border-gray-200 focus:border-brand-blue outline-none transition text-brand-black text-lg placeholder-gray-300 font-medium"
+                  value={profile.displayName}
+                  onChange={(e) =>
+                    setProfile({ ...profile, displayName: e.target.value })
+                  }
+                />
+                <User className="absolute right-2 top-3 w-5 h-5 text-gray-300" />
+              </div>
             </div>
+
+            <div className="group">
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 group-focus-within:text-brand-blue transition-colors">
+                Email Address
+              </label>
+              <div className="relative">
+                <input
+                  type="email"
+                  className="w-full p-3 bg-transparent border-b border-gray-200 focus:border-brand-blue outline-none transition text-brand-black text-lg placeholder-gray-300 font-medium"
+                  value={profile.email}
+                  onChange={(e) =>
+                    setProfile({ ...profile, email: e.target.value })
+                  }
+                />
+                <Mail className="absolute right-2 top-3 w-5 h-5 text-gray-300" />
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* Security Section */}
         <section>
-             <h2 className="text-lg font-bold text-brand-black mb-6 border-b border-gray-100 pb-2">
-                Security
-            </h2>
-          
-            <div className="space-y-6">
-                <div className="group">
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 group-focus-within:text-brand-blue transition-colors">Username</label>
-                    <div className="relative">
-                        <input 
-                            className="w-full p-3 bg-transparent border-b border-gray-200 focus:border-brand-blue outline-none transition text-brand-black text-lg placeholder-gray-300 font-medium"
-                            value={security.username}
-                            onChange={(e) => setSecurity({...security, username: e.target.value})}
-                        />
-                        <div className="absolute right-2 top-3 text-xs font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded">PUBLIC</div>
-                    </div>
-                </div>
+          <h2 className="text-lg font-bold text-brand-black mb-6 border-b border-gray-100 pb-2">
+            Security
+          </h2>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="group">
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 group-focus-within:text-brand-blue transition-colors">Current Password</label>
-                        <div className="relative">
-                            <input 
-                                type="password"
-                                placeholder="••••••••"
-                                className="w-full p-3 bg-transparent border-b border-gray-200 focus:border-brand-blue outline-none transition text-brand-black text-lg font-medium"
-                                value={security.currentPassword}
-                                onChange={(e) => setSecurity({...security, currentPassword: e.target.value})}
-                            />
-                             <Lock className="absolute right-2 top-3 w-5 h-5 text-gray-300" />
-                        </div>
-                    </div>
-
-                    <div className="group">
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 group-focus-within:text-brand-blue transition-colors">New Password</label>
-                        <div className="relative">
-                            <input 
-                                type="password"
-                                placeholder="Enter to change"
-                                className="w-full p-3 bg-transparent border-b border-gray-200 focus:border-brand-blue outline-none transition text-brand-black text-lg font-medium"
-                                value={security.newPassword}
-                                onChange={(e) => setSecurity({...security, newPassword: e.target.value})}
-                            />
-                             <Lock className="absolute right-2 top-3 w-5 h-5 text-gray-300" />
-                        </div>
-                    </div>
+          <div className="space-y-6">
+            <div className="group">
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 group-focus-within:text-brand-blue transition-colors">
+                Username
+              </label>
+              <div className="relative">
+                <input
+                  className="w-full p-3 bg-transparent border-b border-gray-200 focus:border-brand-blue outline-none transition text-brand-black text-lg placeholder-gray-300 font-medium"
+                  value={security.username}
+                  onChange={(e) =>
+                    setSecurity({ ...security, username: e.target.value })
+                  }
+                />
+                <div className="absolute right-2 top-3 text-xs font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded">
+                  PUBLIC
                 </div>
+              </div>
             </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="group">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 group-focus-within:text-brand-blue transition-colors">
+                  Current Password
+                </label>
+                <div className="relative">
+                  <input
+                    type="password"
+                    placeholder="••••••••"
+                    className="w-full p-3 bg-transparent border-b border-gray-200 focus:border-brand-blue outline-none transition text-brand-black text-lg font-medium"
+                    value={security.currentPassword}
+                    onChange={(e) =>
+                      setSecurity({
+                        ...security,
+                        currentPassword: e.target.value,
+                      })
+                    }
+                  />
+                  <Lock className="absolute right-2 top-3 w-5 h-5 text-gray-300" />
+                </div>
+              </div>
+
+              <div className="group">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 group-focus-within:text-brand-blue transition-colors">
+                  New Password
+                </label>
+                <div className="relative">
+                  <input
+                    type="password"
+                    placeholder="Enter to change"
+                    className="w-full p-3 bg-transparent border-b border-gray-200 focus:border-brand-blue outline-none transition text-brand-black text-lg font-medium"
+                    value={security.newPassword}
+                    onChange={(e) =>
+                      setSecurity({
+                        ...security,
+                        newPassword: e.target.value,
+                      })
+                    }
+                  />
+                  <Lock className="absolute right-2 top-3 w-5 h-5 text-gray-300" />
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
 
         <div className="pt-8">
-            <button 
-                type="submit"
-                disabled={isLoading}
-                className="w-full sm:w-auto px-8 py-4 bg-brand-black text-brand-blue rounded-full font-bold hover:bg-gray-900 transition shadow-lg shadow-brand-blue/10 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-            >
-                {isLoading ? (
-                    <span className="w-5 h-5 border-2 border-brand-blue border-t-transparent rounded-full animate-spin"></span>
-                ) : (
-                    <Save className="w-5 h-5" />
-                )}
-                Save Changes
-            </button>
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full sm:w-auto px-8 py-4 bg-brand-black text-brand-blue rounded-full font-bold hover:bg-gray-900 transition shadow-lg shadow-brand-blue/10 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+          >
+            {isLoading ? (
+              <span className="w-5 h-5 border-2 border-brand-blue border-t-transparent rounded-full animate-spin"></span>
+            ) : (
+              <Save className="w-5 h-5" />
+            )}
+            Save Changes
+          </button>
         </div>
-
       </form>
     </div>
   );

@@ -32,6 +32,7 @@ import {
   updateLeadPipelineStage,
   mapStatusToStage,
 } from "./services/salesPipeline";
+import { fetchUserProfile } from './services/user';
 
 type View = 'dashboard' | 'leads' | 'calls' | 'whatsapp' | 'appointments' | 'reports' | 'settings';
 
@@ -192,6 +193,24 @@ export default function App() {
     };
   }, []);
 
+
+  // ========= user profile and auth can go here =========
+
+  const [userProfile, setUserProfile] = useState<any>(null);
+  useEffect(() => {
+    async function loadProfile() {
+      try {
+        const profile = await fetchUserProfile();
+        setUserProfile(profile);
+      } catch (err) {
+        console.error("Failed to load profile", err);
+      }
+    }
+
+    loadProfile();
+  }, []);
+
+
   // ---------- METRICS ----------
   const metrics = useMemo(() => {
     const total = leads.length;
@@ -288,18 +307,39 @@ export default function App() {
           </nav>
 
           {/* User Profile Footer */}
-          <div className={`mt-auto pt-6 border-t border-gray-800`}>
-            <div className={`flex items-center gap-3 cursor-pointer hover:opacity-80 transition ${isSidebarCollapsed ? 'md:justify-center' : ''}`}>
-              <div className="h-10 w-10 min-w-[2.5rem] rounded-full bg-gray-800 flex items-center justify-center border border-gray-700">
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=DrSmith" alt="User" className="w-8 h-8" />
-              </div>
-              <div className={`overflow-hidden animate-in fade-in duration-300 ${isSidebarCollapsed ? 'md:hidden' : 'block'}`}>
-                <div className="text-sm font-semibold text-white truncate">Dr. Smith</div>
-                <div className="text-xs text-gray-400 truncate">Optometrist</div>
-              </div>
-            </div>
-          </div>
+         <div className={`mt-auto pt-6 border-t border-gray-800`}>
         </div>
+  <div
+    onClick={() => handleNavClick("settings")}
+    className={`flex items-center gap-3 cursor-pointer hover:opacity-80 transition ${
+      isSidebarCollapsed ? "md:justify-center" : ""
+    }`}
+  >
+    <div className="h-10 w-10 min-w-[2.5rem] rounded-full bg-gray-800 flex items-center justify-center border border-gray-700">
+      <img
+        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${
+          userProfile?.username || "user"
+        }`}
+        alt="User"
+        className="w-8 h-8"
+      />
+    </div>
+
+    <div
+      className={`overflow-hidden animate-in fade-in duration-300 ${
+        isSidebarCollapsed ? "md:hidden" : "block"
+      }`}
+    >
+      <div className="text-sm font-semibold text-white truncate">
+        {userProfile?.display_name || "Loading..."}
+      </div>
+      <div className="text-xs text-gray-400 truncate">
+        {userProfile?.email || ""}
+      </div>
+    </div>
+  </div>
+</div>
+
       </aside>
 
       {/* Main Content */}

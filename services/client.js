@@ -1,17 +1,18 @@
 import axios from "axios";
-
-const API_URL =
-  import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL;
+import { getToken } from "./authTokenHelper";
 
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000",
+  withCredentials: false,
 });
 
-// Attach token automatically if present
+// Attach Authorization header on every request
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("auth_token");
+  const token = getToken();  // get from localStorage
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  } else {
+    console.warn("⚠ No token found when calling API:", config.url);
   }
   return config;
 });

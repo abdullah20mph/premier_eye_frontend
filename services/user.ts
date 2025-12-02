@@ -1,6 +1,6 @@
-import api from "./client"; // your axios instance with token interceptor
+import api from "./client";
 
 export async function fetchUserProfile() {
   const res = await api.get("/user/settings/profile");
-  return res.data.data; // contains: { display_name, email, username }
+  return res.data.data; // { display_name, email, username, ... }
 }

@@ -19,7 +19,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({
 }) => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [displayName, setDisplayName] = useState("");
+  const [display_name, setDisplay_name] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -35,11 +35,16 @@ const RegisterPage: React.FC<RegisterPageProps> = ({
 
     setIsLoading(true);
 
+    const sanitizedDisplay_name = 
+        display_name.trim().length === 0 ? null : display_name.trim();
+    
+    setIsLoading(true);
+
     try {
       await axios.post(`${API_BASE_URL}/auth/interaction/register`, {
         firstName,
         lastName,
-        displayName,
+        display_name: sanitizedDisplay_name,
         email,
         password,
         confirmPassword,
@@ -49,8 +54,11 @@ const RegisterPage: React.FC<RegisterPageProps> = ({
       onRegisterSuccess(); // switch to login
     } catch (err: any) {
       console.error("Register failed", err);
+      const errorMessage = err.response?.data?.message;
+      console.error("Backend Error Message:", errorMessage);
       toast.error(
         err.response?.data?.message || "Failed to create account. Please try again."
+        
       );
     } finally {
       setIsLoading(false);
@@ -104,8 +112,8 @@ const RegisterPage: React.FC<RegisterPageProps> = ({
           <input
             type="text"
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-brand-blue"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
+            value={display_name}
+            onChange={(e) => setDisplay_name(e.target.value)}
             placeholder="Dr. Sarah Ahmed"
           />
         </div>

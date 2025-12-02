@@ -14,26 +14,28 @@ type BackendRecentLead = {
   latest_reply: string | null;
   created_at: string | null;
   timestamp: string | null;
-  appointmentDate?: string | null;
+
+  // 🔥 NEW: match what backend actually returns
+  scheduled_at?: string | null;              // if you return this from appointments
+  appointmentDate?: string | null;  // or this alias
+
   saleAmount?: number | null;
   notes?: string | null;
 };
 
 export async function fetchRecentActivityLeads(): Promise<Lead[]> {
   const res = await api.get("/user/dashboard/recent-activity/list", {
-    params: { page: 1, limit: 50 },
+    params: { page: 1, limit: 100 },
   });
 
   const items: BackendRecentLead[] = res.data?.data?.items ?? [];
 
   return items.map((row): Lead => {
-    // Pick a reasonable timestamp
     const ts =
       row.timestamp
         ? new Date(Number(row.timestamp)).toISOString()
         : row.created_at || new Date().toISOString();
 
-    // Build 1 AI call attempt if we have a summary
     const callAttempts =
       row.ai_summary
         ? [
@@ -47,7 +49,6 @@ export async function fetchRecentActivityLeads(): Promise<Lead[]> {
           ]
         : [];
 
-    
     const messages =
       row.latest_reply
         ? [
@@ -60,6 +61,12 @@ export async function fetchRecentActivityLeads(): Promise<Lead[]> {
           ]
         : [];
 
+    // 🔥 Pull appointment from backend fields
+    const appointmentDate =
+      row.appointmentDate||
+      row.scheduled_at ||
+      null;
+
     return {
       id: String(row.id),
 
@@ -67,12 +74,11 @@ export async function fetchRecentActivityLeads(): Promise<Lead[]> {
       phone: row.lead_number ?? "",
       email: row.email ?? "",
 
-      // cast because Lead.location / Lead.status are unions
       location: (row.location_preference ?? "") as any,
       source: (row.source ?? "Unknown") as any,
       status: (row.pipeline_stage ?? "New") as any,
 
-      appointmentDate: row.appointmentDate ?? null,
+      appointmentDate: appointmentDate,                        // 👈 now populated
       saleAmount: row.saleAmount ?? null,
       notes: row.notes ?? row.ai_summary ?? "",
 

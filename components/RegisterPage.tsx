@@ -34,7 +34,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({
     setIsLoading(true);
 
     try {
-      await axios.post(`${API_BASE_URL}auth/interaction/register`, {
+      await axios.post(`${API_BASE_URL}/auth/interaction/register`, {
         firstName,
         lastName,
         displayName,

@@ -9,7 +9,9 @@ type RegisterPageProps = {
 };
 
 const API_BASE_URL =
-  (import.meta as any).env?.VITE_API_URL || "http://localhost:5000";
+  ((import.meta as any).env?.VITE_API_URL as string | undefined)?.replace(
+    /\/+$/, ""
+  ) || "http://localhost:5000";
 
 const RegisterPage: React.FC<RegisterPageProps> = ({
   onRegisterSuccess,

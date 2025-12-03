@@ -3,15 +3,20 @@ import api from "./client";
 
 export type BackendAiCallRow = {
   id: number;
-  ts?: string | null;                 // if you store timestamp as ts
-  called_at?: string | null;          // or called_at - we'll prefer this if present
-  outcome?: string | null;            // "answered", "voicemail", ...
-  summary?: string | null;
+  timestamp?: string | null;
+  ts?: string | null;
+
+  call_status?: string | null;
+  call_summary?: string | null;
   recording_url?: string | null;
-  lead_id?: number | null;
+
+  service?: string | null;
+
+  lead_id?: number | null;                 // ✅ FIXED
   lead_name?: string | null;
   lead_number?: string | null;
   location_preference?: string | null;
+  call_url?: string | null;
 };
 
 export type CallItem = {
@@ -24,47 +29,53 @@ export type CallItem = {
   leadName: string;
   leadPhone: string;
   leadLocation?: string;
+  service?: string;                         // ✅ NEW
 };
 
 type FetchParams = {
   page?: number;
   limit?: number;
-  status?: string;  // e.g. "answered,booked"
-  search?: string;  // lead name
+  status?: string;
+  search?: string;
 };
 
 export async function fetchAICallFeed(
   params: FetchParams = {}
 ): Promise<CallItem[]> {
-  const res = await api.get("/user/ai-sales-calls/list", {
+
+  const res = await api.get("/user/ai-calls/list", {     // ✅ FIXED ENDPOINT
     params: {
       page: params.page ?? 1,
-      limit: params.limit ?? 50,
+      // limit: params.limit ?? 50,
       status: params.status,
       search: params.search,
     },
   });
 
-  // Because you're using response.send(), the shape is:
-  // { success, statusCode, message, data }
   const payload = res.data;
   const data = payload?.data || {};
   const items: BackendAiCallRow[] = data.items ?? data.rows ?? [];
 
   return items.map((row) => {
-    const ts = row.called_at || row.ts || new Date().toISOString();
+    const ts =
+      row.timestamp ||
+      row.ts ||
+      new Date().toISOString();
 
     return {
       id: String(row.id),
       ts,
-      outcome: row.outcome ?? "unknown",
-      summary: row.summary ?? "",
+
+      outcome: row.call_status ?? "unknown",
+      summary: row.call_summary ?? "",
       recordingUrl: row.recording_url ?? undefined,
-      leadId: row.lead_id ? String(row.lead_id) : "",
+      leadId: String(row.id), // <-- FIXED
       leadName: row.lead_name ?? "Unknown",
       leadPhone: row.lead_number ?? "",
       leadLocation: row.location_preference ?? undefined,
+
+      service: row.service ?? undefined,     // needed on frontend
+      callUrl: row.call_url ?? undefined,   // added callUrl
     };
   });
 }
-

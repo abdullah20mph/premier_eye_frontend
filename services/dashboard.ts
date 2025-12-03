@@ -25,7 +25,7 @@ type BackendRecentLead = {
 
 export async function fetchRecentActivityLeads(): Promise<Lead[]> {
   const res = await api.get("/user/dashboard/recent-activity/list", {
-    params: { page: 1, limit: 100 },
+    params: { page: 1, limit: 1000 },
   });
 
   const items: BackendRecentLead[] = res.data?.data?.items ?? [];

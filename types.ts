@@ -49,26 +49,17 @@ export type Lead = {
   email?: string;
   source?: string;
   location?: LocationOption;
-
-  // 🔥 Backend field — required for sorting and pagination
-  created_at?: string;
-
-  // 🔥 Existing field used as fallback
-  dateCaptured?: string;
-
+  created_at?: string;   // 🔥 Backend field — required for sorting and pagination
+  dateCaptured?: string;   // 🔥 Existing field used as fallback
   dob?: string;
   insurance?: string | null;
-
   status: LeadStatus;
   pipelineStage?: PipelineStage; 
-
   // 🔥 Appointment injected from backend (JOIN)
   appointmentDate?: string | null;
-
   service?: string | null;
   saleAmount?: number | null;
   notes?: string;
-
   messages: Message[];
   callAttempts: CallAttempt[];
   lastEmail?: EmailLog | null;

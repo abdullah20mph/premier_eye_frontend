@@ -8,16 +8,17 @@ type BackendLeadRow = {
   lead_number: string | null;
   email: string | null;
   location_preference: string | null;
-  source: string | null;
+  source?: string | null;
   pipeline_stage: PipelineStage;
 };
 
+// stage → UI status
 export function mapStageToStatus(stage: PipelineStage): LeadStatus {
   switch (stage) {
     case "NEW_LEAD":
       return "New";
     case "AI_ENGAGING":
-      return "AI Spoke to Lead"; // or "AI Called – No Answer"
+      return "AI Spoke to Lead"; // could later split "no answer"
     case "NEEDS_ACTION":
       return "Needs VA Follow-Up";
     case "BOOKED":
@@ -27,6 +28,7 @@ export function mapStageToStatus(stage: PipelineStage): LeadStatus {
   }
 }
 
+// UI status → stage
 export function mapStatusToStage(status: LeadStatus): PipelineStage | null {
   switch (status) {
     case "New":
@@ -53,9 +55,7 @@ export async function fetchSalesPipeline(): Promise<Lead[]> {
   const raw = res.data?.data;
   const allRows: BackendLeadRow[] = [];
 
-  if (Array.isArray(raw)) {
-    allRows.push(...(raw as BackendLeadRow[]));
-  } else if (raw && typeof raw === "object") {
+  if (raw && typeof raw === "object") {
     Object.values(raw).forEach((bucket: any) => {
       if (Array.isArray(bucket?.leads)) {
         allRows.push(...bucket.leads);
@@ -92,7 +92,6 @@ export async function updateLeadPipelineStage(
 ) {
   const numericId = Number(id);
 
-  // we assume App.tsx only calls this for numeric IDs
   const res = await api.patch(`/user/sales-pipeline/${numericId}/stage`, {
     pipeline_stage: stage,
   });

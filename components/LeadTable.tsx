@@ -25,6 +25,7 @@ export default function LeadTable({ leads, onSelect }: Props) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("All");
   const [sourceFilter, setSourceFilter] = useState<string>("All");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -41,27 +42,28 @@ export default function LeadTable({ leads, onSelect }: Props) {
       const aAppt = a.appointmentDate ? new Date(a.appointmentDate).getTime() : null;
       const bAppt = b.appointmentDate ? new Date(b.appointmentDate).getTime() : null;
 
-      // CASE 1: Both have appointments → soonest first
+      // Both have appointments
       if (aAppt && bAppt) {
-        return aAppt - bAppt;
+        return sortDirection === "asc" ? aAppt - bAppt : bAppt - aAppt;
       }
 
-      // CASE 2: Only A has appointment → A comes first
-      if (aAppt && !bAppt) return -1;
+      // Only A has appointment
+      if (aAppt && !bAppt) return sortDirection === "asc" ? -1 : 1;
 
-      // CASE 3: Only B has appointment → B comes first
-      if (!aAppt && bAppt) return 1;
+      // Only B has appointment
+      if (!aAppt && bAppt) return sortDirection === "asc" ? 1 : -1;
 
-      // CASE 4: Neither have appointment → fallback to created_at DESC
+      // Fallback to created_at / dateCaptured
       const aDateStr = (a as any).created_at || (a as any).dateCaptured;
       const bDateStr = (b as any).created_at || (b as any).dateCaptured;
 
       const aTime = aDateStr ? new Date(aDateStr).getTime() : 0;
       const bTime = bDateStr ? new Date(bDateStr).getTime() : 0;
 
-      return bTime - aTime;
+      return sortDirection === "asc" ? aTime - bTime : bTime - aTime;
     });
-  }, [leads]);
+  }, [leads, sortDirection]);
+
 
 
   // -----------------------------
@@ -105,7 +107,7 @@ export default function LeadTable({ leads, onSelect }: Props) {
   );
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+    <div className="rounded-2xl border border-gray-200 shadow-sm bg-white overflow-hidden">
 
       {/* Filter Bar */}
       <div className="p-5 border-b border-gray-100 flex flex-col lg:flex-row gap-4 items-center justify-between bg-white">
@@ -150,19 +152,31 @@ export default function LeadTable({ leads, onSelect }: Props) {
             </select>
             <Filter className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
           </div>
+          <div className="relative min-w-[180px]">
+            <select
+              className="w-full pl-3 pr-8 py-2.5 text-sm bg-white border border-gray-200 rounded-lg
+    focus:outline-none cursor-pointer font-medium text-gray-600"
+              value={sortDirection}
+              onChange={(e) => setSortDirection(e.target.value as "desc" | "asc")}
+            >
+              <option value="desc">Newest Date</option>
+              <option value="asc">Oldest Date</option>
+            </select>
+            <Filter className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+          </div>
         </div>
       </div>
 
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="min-w-full">
-          <thead className="bg-gray-50/50 border-b border-gray-100">
+          <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
-              <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Lead Details</th>
-              <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider hidden md:table-cell">Source</th>
-              <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Status</th>
-              <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider hidden xl:table-cell">Appointment</th>
-              <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Date</th>
+              <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-600 uppercase tracking-[0.2em]">Lead Details</th>
+              <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-600 uppercase tracking-[0.2em] hidden md:table-cell">Source</th>
+              <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-600 uppercase tracking-[0.2em] hidden lg:table-cell">Status</th>
+              <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-600 uppercase tracking-[0.2em] hidden xl:table-cell">Appointment</th>
+              <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-600 uppercase tracking-[0.2em]">Date</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -243,9 +257,9 @@ export default function LeadTable({ leads, onSelect }: Props) {
         </table>
       </div>
 
-      {/* 🔥 FOOTER PAGINATION */}
-      <div className="pt-4 border-t border-gray-200 flex justify-between items-center bg-gray-50 px-6 py-3">
-        <div className="text-xs text-gray-500">
+      {/* FOOTER PAGINATION */}
+      <div className="pt-4 border-t border-gray-200 flex justify-between items-center bg-white px-6 py-4">
+        <div className="text-xs text-gray-600 font-medium">
           Showing{" "}
           {filtered.length === 0
             ? 0
@@ -259,8 +273,7 @@ export default function LeadTable({ leads, onSelect }: Props) {
           <button
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
-            className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white 
-            text-xs font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+            className="px-3 py-2 rounded-full bg-brand-black text-white text-xs font-bold shadow-sm hover:shadow-md transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 border border-gray-900"
           >
             <ChevronLeft className="w-3 h-3" /> Previous
           </button>
@@ -268,14 +281,12 @@ export default function LeadTable({ leads, onSelect }: Props) {
           <button
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages || totalPages === 0}
-            className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white 
-            text-xs font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+            className="px-3 py-2 rounded-full bg-brand-blue text-brand-black text-xs font-bold shadow-sm hover:shadow-md transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 border border-blue-200"
           >
             Next <ChevronRight className="w-3 h-3" />
           </button>
         </div>
       </div>
-
     </div>
   );
 }

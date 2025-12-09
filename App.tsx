@@ -1,6 +1,6 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { Lead, LeadStatus } from './types';
-import { leadsSeed } from './services/mockData';
+// import { leadsSeed } from './services/mockData';
 import MetricsHeader from './components/MetricsHeader';
 import LeadTable from './components/LeadTable';
 import LeadDetailModal from './components/LeadDetailModal';
@@ -57,7 +57,8 @@ function mergeLeads(existing: Lead[], incoming: Lead[]): Lead[] {
 
 export default function App() {
   const [currentView, setCurrentView] = useState<View>('dashboard');
-  const [leads, setLeads] = useState<Lead[]>(leadsSeed);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [pipelineLeads, setPipelineLeads] = useState<Lead[]>([]);
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
 
   const [pipelineError, setPipelineError] = useState<string | null>(null);
@@ -70,6 +71,10 @@ export default function App() {
   const [authMode, setAuthMode] = useState<AuthMode>('login');
 
   const [userProfile, setUserProfile] = useState<any>(null);
+
+  // --------------- Loader/skeleton states ---------------
+  const [initialLoading, setInitialLoading] = useState(true);
+
 
   // ---------- ACTION REQUIRED (alert) LEADS ----------
   const [alertLeads, setAlertLeads] = useState<Lead[]>([]);
@@ -96,7 +101,7 @@ export default function App() {
     setUserProfile(null);
     setAlertLeads([]);
     setRecentLeads([]);
-    setLeads(leadsSeed);
+    setLeads([]);
     setCurrentView("dashboard");
     toast.success("Logged out");
   };
@@ -105,6 +110,45 @@ export default function App() {
     toast.success("Account created! You can now log in.");
     setAuthMode("login");
   };
+
+
+  //------------------------Skeleton Loaders and Data Fetchers------------------------
+  useEffect(() => {
+  if (!token) return;
+
+  let cancelled = false;
+
+  async function bootstrap() {
+    try {
+      setInitialLoading(true);
+
+      const [alerts, recent, pipeline] = await Promise.all([
+        fetchActionRequiredLeads(),
+        fetchRecentActivityLeads(),
+        fetchSalesPipeline(),
+      ]);
+
+      if (cancelled) return;
+
+      setAlertLeads(alerts);
+      setRecentLeads(recent);
+      setPipelineLeads(pipeline);
+
+      // merge all leads together
+      const merged = mergeLeads(mergeLeads(alerts, recent), pipeline);
+      setLeads(merged);
+    } catch (err) {
+      console.error("Bootstrap error:", err);
+    } finally {
+      if (!cancelled) setInitialLoading(false);
+    }
+  }
+
+  bootstrap();
+
+  return () => { cancelled = true };
+}, [token]);
+
 
   // ========== DATA LOADERS (only when token exists) ==========
 
@@ -183,6 +227,8 @@ export default function App() {
     };
   }, [token]);
 
+  // ----------------------------- SALES PIPELINE -----------------------------
+
   useEffect(() => {
     if (!token) return;
 
@@ -191,9 +237,10 @@ export default function App() {
     async function loadPipeline() {
       try {
         setPipelineError(null);
-        const pipelineLeads = await fetchSalesPipeline();
+        const pipeline = await fetchSalesPipeline();
         if (!cancelled) {
-          setLeads((prev) => mergeLeads(prev, pipelineLeads));
+          setPipelineLeads(pipeline);            // <- used by Kanban
+          setLeads((prev) => mergeLeads(prev, pipeline)); // <- global metrics
         }
       } catch (err) {
         console.error("Failed to fetch sales pipeline", err);
@@ -216,6 +263,9 @@ export default function App() {
 
   const updateLead = (id: string, patch: Partial<Lead>) => {
     setLeads((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+    setPipelineLeads((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, ...patch } : p))
+    );
     setAlertLeads((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
     setRecentLeads((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
   };
@@ -229,6 +279,7 @@ export default function App() {
     });
 
     if (!stage) return;
+
     try {
       await updateLeadPipelineStage(id, stage);
     } catch (err) {
@@ -292,6 +343,17 @@ export default function App() {
       </div>
     );
   }
+
+  if (initialLoading) {
+  return (
+    <div className="min-h-screen bg-brand-bg flex items-center justify-center">
+      <div className="animate-pulse text-center">
+        <div className="h-10 w-10 bg-gray-300 rounded-full mx-auto mb-4"></div>
+        <p className="text-gray-400 text-sm">Loading your dashboard…</p>
+      </div>
+    </div>
+  );
+}
 
   // ===================== AUTHENTICATED LAYOUT =====================
   return (
@@ -370,6 +432,7 @@ export default function App() {
             <NavItem icon={Settings} label="Settings" active={currentView === 'settings'} onClick={() => handleNavClick('settings')} collapsed={isSidebarCollapsed} />
             <NavItem icon={LogOut} label="Logout" onClick={() => handleLogout()} collapsed={isSidebarCollapsed} />
           </nav>
+          
 
           {/* User Footer */}
           <div className="mt-auto pt-6 border-t border-gray-800 space-y-3">
@@ -407,7 +470,21 @@ export default function App() {
         `}
       >
         {currentView === 'dashboard' && (
-          <div className="max-w-7xl mx-auto w-full overflow-y-auto custom-scrollbar pb-20">
+          <div className="relative max-w-7xl mx-auto w-full overflow-y-auto custom-scrollbar pb-20">
+            {/* Background layer behind dashboard cards (page-level, not inside components) */}
+            <div className="pointer-events-none absolute inset-0 rounded-3xl bg-gradient-to-br from-white via-gray-50 to-white" />
+            <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 bg-brand-blue/10 blur-3xl rounded-full" />
+            <div className="pointer-events-none absolute right-0 bottom-10 h-80 w-80 bg-gray-200/30 blur-3xl rounded-full" />
+            <div
+              className="pointer-events-none absolute inset-4 rounded-[28px] opacity-50"
+              style={{
+                backgroundImage:
+                  "radial-gradient(circle at 1px 1px, rgba(0,0,0,0.04) 1px, transparent 0)",
+                backgroundSize: "22px 22px",
+              }}
+            />
+
+            <div className="relative z-10">
             <div className="flex justify-between items-center mb-6 md:mb-8">
               <h1 className="text-xl md:text-2xl font-bold text-brand-black">Overview</h1>
               {/* <div className="text-xs md:text-sm text-gray-500">Last updated: Just now</div> */}
@@ -430,15 +507,31 @@ export default function App() {
                 onSelect={(id) => setSelectedLeadId(id)}
               />
             </div>
+            </div>
           </div>
         )}
 
-        {currentView === 'leads' && (
-          <LeadsBoard
-            leads={leads}
-            onUpdateStatus={updateLeadStatus}
-            onSelectLead={setSelectedLeadId}
-          />
+        {currentView === "leads" && (
+          <div className="relative h-full">
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white via-slate-50 to-blue-50" />
+            <div className="pointer-events-none absolute -left-16 top-10 h-72 w-72 bg-brand-blue/10 blur-3xl rounded-full" />
+            <div className="pointer-events-none absolute right-[-40px] bottom-10 h-80 w-80 bg-emerald-100/50 blur-3xl rounded-full" />
+            <div
+              className="pointer-events-none absolute inset-6 rounded-[32px] opacity-50"
+              style={{
+                backgroundImage:
+                  "radial-gradient(circle at 1px 1px, rgba(0,0,0,0.04) 1px, transparent 0)",
+                backgroundSize: "22px 22px",
+              }}
+            />
+            <div className="relative z-10 h-full">
+              <LeadsBoard
+                leads={pipelineLeads.length ? pipelineLeads : leads}
+                onUpdateStatus={updateLeadStatus}
+                onSelectLead={setSelectedLeadId}
+              />
+            </div>
+          </div>
         )}
 
         {currentView === 'calls' && (
@@ -457,10 +550,25 @@ export default function App() {
         )}
 
         {currentView === 'appointments' && (
-          <AppointmentsPage
-            leads={leads}
-            onSelectLead={setSelectedLeadId}
-          />
+          <div className="relative h-full">
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white via-gray-50 to-emerald-50" />
+            <div className="pointer-events-none absolute -left-10 top-0 h-64 w-64 bg-emerald-200/40 blur-3xl rounded-full" />
+            <div className="pointer-events-none absolute right-[-30px] bottom-0 h-72 w-72 bg-blue-100/40 blur-3xl rounded-full" />
+            <div
+              className="pointer-events-none absolute inset-6 rounded-[28px] opacity-45"
+              style={{
+                backgroundImage:
+                  "radial-gradient(circle at 1px 1px, rgba(0,0,0,0.035) 1px, transparent 0)",
+                backgroundSize: "24px 24px",
+              }}
+            />
+            <div className="relative z-10 h-full">
+              <AppointmentsPage
+                leads={leads}
+                onSelectLead={setSelectedLeadId}
+              />
+            </div>
+          </div>
         )}
 
         {currentView === 'reports' && (
@@ -468,9 +576,24 @@ export default function App() {
         )}
 
         {currentView === 'settings' && (
-          <SettingsPage
-            onProfileUpdated={(newProfile) => setUserProfile(newProfile)}
-          />
+          <div className="relative h-full">
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white via-gray-50 to-slate-100" />
+            <div className="pointer-events-none absolute -left-16 top-10 h-72 w-72 bg-gray-200/60 blur-3xl rounded-full" />
+            <div className="pointer-events-none absolute right-[-40px] bottom-10 h-72 w-72 bg-brand-blue/8 blur-3xl rounded-full" />
+            <div
+              className="pointer-events-none absolute inset-4 rounded-[26px] opacity-45"
+              style={{
+                backgroundImage:
+                  "radial-gradient(circle at 1px 1px, rgba(0,0,0,0.03) 1px, transparent 0)",
+                backgroundSize: "20px 20px",
+              }}
+            />
+            <div className="relative z-10 h-full">
+              <SettingsPage
+                onProfileUpdated={(newProfile) => setUserProfile(newProfile)}
+              />
+            </div>
+          </div>
         )}
 
 
@@ -505,8 +628,8 @@ function NavItem({
       onClick={onClick}
       title={collapsed ? label : undefined}
       className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition font-medium text-left ${active
-          ? 'bg-gray-800 text-brand-blue'
-          : 'text-gray-400 hover:text-white hover:bg-gray-900'
+        ? 'bg-gray-800 text-brand-blue'
+        : 'text-gray-400 hover:text-white hover:bg-gray-900'
         } ${collapsed ? 'md:justify-center' : ''}`}
     >
       <Icon className="w-5 h-5 shrink-0" />

@@ -36,21 +36,33 @@ export default function AICallsPage({ leads, onSelectLead }: Props) {
   const [callsFromBackend, setCallsFromBackend] = useState<FeedCallItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [timedOut, setTimedOut] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Load calls
   useEffect(() => {
     let cancelled = false;
+    const TIMEOUT_MS = 5000;
 
     async function load() {
       try {
         setLoading(true);
-        const data = await fetchAICallFeed();
+        setTimedOut(false);
+        const data = await Promise.race([
+          fetchAICallFeed(),
+          new Promise<FeedCallItem[]>((_, reject) =>
+            setTimeout(() => reject(new Error("timeout")), TIMEOUT_MS)
+          ),
+        ]);
         if (!cancelled) {
           setCallsFromBackend(data);
           setError(null);
         }
-      } catch (err) {
-        if (!cancelled) setError("Failed to load AI calls");
+      } catch (err: any) {
+        if (!cancelled) {
+          setError("Live call feed is slow to respond. Showing local call attempts.");
+          setTimedOut(true);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -58,7 +70,7 @@ export default function AICallsPage({ leads, onSelectLead }: Props) {
 
     load();
     return () => { cancelled = true; };
-  }, []);
+  }, [refreshKey]);
 
   // Merge backend calls
   const allCalls = useMemo(() => {
@@ -108,7 +120,7 @@ export default function AICallsPage({ leads, onSelectLead }: Props) {
 
   // Pagination
   const ITEMS_PER_PAGE = 30;
-  const totalPages = Math.ceil(filteredCalls.length / ITEMS_PER_PAGE);
+  const totalPages = Math.max(1, Math.ceil(filteredCalls.length / ITEMS_PER_PAGE));
 
   const paginatedCalls = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -173,7 +185,17 @@ export default function AICallsPage({ leads, onSelectLead }: Props) {
           Live Call Feed
         </h1>
         {loading && <p className="text-xs text-gray-400 mt-1">Loading calls…</p>}
-        {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+        {error && (
+          <div className="flex items-center gap-2 text-xs text-red-500 mt-1">
+            <span>{error} {timedOut ? "(timed out)" : ""}</span>
+            <button
+              onClick={() => setRefreshKey((k) => k + 1)}
+              className="px-2 py-1 rounded border border-red-200 bg-white text-red-600 hover:bg-red-50 text-[11px] font-bold"
+            >
+              Retry
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Filters */}

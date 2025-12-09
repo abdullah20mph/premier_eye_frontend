@@ -66,120 +66,144 @@ const RegisterPage: React.FC<RegisterPageProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
-      <h1 className="text-2xl font-bold text-brand-black mb-2">
-        Create your account
-      </h1>
-      <p className="text-sm text-gray-500 mb-6">
-        Set up access to your clinic dashboard.
-      </p>
+    <div className="relative">
+      <div className="pointer-events-none absolute inset-0 rounded-3xl bg-gradient-to-br from-white via-gray-50 to-white" />
+      <div className="pointer-events-none absolute -left-12 -top-12 h-44 w-44 bg-brand-blue/10 blur-3xl rounded-full" />
+      <div className="pointer-events-none absolute right-[-24px] bottom-[-24px] h-52 w-52 bg-gray-200/50 blur-3xl rounded-full" />
+      <div
+        className="pointer-events-none absolute inset-3 rounded-2xl opacity-45"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 1px 1px, rgba(0,0,0,0.035) 1px, transparent 0)",
+          backgroundSize: "18px 18px",
+        }}
+      />
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="relative bg-white rounded-2xl shadow-xl border border-gray-200 p-8 overflow-hidden">
+        <div
+          className="pointer-events-none absolute inset-0 rounded-2xl opacity-35"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 1px 1px, rgba(0,0,0,0.04) 1px, transparent 0)",
+            backgroundSize: "16px 16px",
+          }}
+        />
+        <div className="relative">
+        <h1 className="text-2xl font-bold text-brand-black mb-2">
+          Create your account
+        </h1>
+        <p className="text-sm text-gray-500 mb-6">
+          Set up access to your clinic dashboard.
+        </p>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-semibold text-gray-500 mb-1 block">
+                First name
+              </label>
+              <input
+                type="text"
+                required
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-brand-blue"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="Sarah"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-gray-500 mb-1 block">
+                Last name
+              </label>
+              <input
+                type="text"
+                required
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-brand-blue"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Ahmed"
+              />
+            </div>
+          </div>
+
           <div>
             <label className="text-xs font-semibold text-gray-500 mb-1 block">
-              First name
+              Display name
             </label>
             <input
               type="text"
-              required
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-brand-blue"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              placeholder="Sarah"
+              value={display_name}
+              onChange={(e) => setDisplay_name(e.target.value)}
+              placeholder="Dr. Sarah Ahmed"
             />
           </div>
 
           <div>
             <label className="text-xs font-semibold text-gray-500 mb-1 block">
-              Last name
+              Email
             </label>
             <input
-              type="text"
+              type="email"
               required
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-brand-blue"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              placeholder="Ahmed"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
             />
           </div>
+
+          <div>
+            <label className="text-xs font-semibold text-gray-500 mb-1 block">
+              Password
+            </label>
+            <input
+              type="password"
+              required
+              minLength={6}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-brand-blue"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="At least 6 characters"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-gray-500 mb-1 block">
+              Confirm password
+            </label>
+            <input
+              type="password"
+              required
+              minLength={6}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-brand-blue"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Repeat your password"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-brand-black text-brand-blue rounded-full py-2.5 text-sm font-semibold hover:bg-gray-900 transition disabled:opacity-60"
+          >
+            {isLoading ? "Creating account..." : "Register"}
+          </button>
+        </form>
+
+        <div className="mt-6 text-center text-xs text-gray-500">
+          Already have an account?{" "}
+          <button
+            type="button"
+            onClick={onSwitchToLogin}
+            className="text-brand-blue font-semibold hover:underline"
+          >
+            Log in
+          </button>
         </div>
-
-        <div>
-          <label className="text-xs font-semibold text-gray-500 mb-1 block">
-            Display name
-          </label>
-          <input
-            type="text"
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-brand-blue"
-            value={display_name}
-            onChange={(e) => setDisplay_name(e.target.value)}
-            placeholder="Dr. Sarah Ahmed"
-          />
         </div>
-
-        <div>
-          <label className="text-xs font-semibold text-gray-500 mb-1 block">
-            Email
-          </label>
-          <input
-            type="email"
-            required
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-brand-blue"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-          />
-        </div>
-
-        <div>
-          <label className="text-xs font-semibold text-gray-500 mb-1 block">
-            Password
-          </label>
-          <input
-            type="password"
-            required
-            minLength={6}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-brand-blue"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="At least 6 characters"
-          />
-        </div>
-
-        <div>
-          <label className="text-xs font-semibold text-gray-500 mb-1 block">
-            Confirm password
-          </label>
-          <input
-            type="password"
-            required
-            minLength={6}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-brand-blue"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="Repeat your password"
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="w-full bg-brand-black text-brand-blue rounded-full py-2.5 text-sm font-semibold hover:bg-gray-900 transition disabled:opacity-60"
-        >
-          {isLoading ? "Creating account..." : "Register"}
-        </button>
-      </form>
-
-      <div className="mt-6 text-center text-xs text-gray-500">
-        Already have an account?{" "}
-        <button
-          type="button"
-          onClick={onSwitchToLogin}
-          className="text-brand-blue font-semibold hover:underline"
-        >
-          Log in
-        </button>
       </div>
     </div>
   );

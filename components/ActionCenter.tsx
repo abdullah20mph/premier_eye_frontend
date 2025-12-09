@@ -53,7 +53,7 @@ export default function ActionCenter({ leads, onReview }: Props) {
   };
 
   return (
-    <section className="mb-6 md:mb-10 animate-in fade-in slide-in-from-top-4 duration-700 ">
+    <section className="mb-6 md:mb-10 animate-in fade-in slide-in-from-top-4 duration-700">
       {/* Minimal Header */}
       <div className="flex items-center justify-between mb-4 px-1">
         <div className="flex items-center gap-3">
@@ -75,7 +75,7 @@ export default function ActionCenter({ leads, onReview }: Props) {
       </div>
 
       {/* Main Card Container with Padding for Arrows */}
-      <div className="relative group px-10 md:px-14">
+      <div className="relative group px-4 md:px-8">
         {/* Navigation Arrows */}
         {sortedLeads.length > 1 && (
           <>
@@ -98,7 +98,7 @@ export default function ActionCenter({ leads, onReview }: Props) {
 
         <div
           onClick={() => onReview(lead.id)}
-          className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 p-5 md:p-8 cursor-pointer hover:border-brand-blue/40 hover:shadow-lg transition-all relative overflow-hidden"
+          className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 md:p-7 cursor-pointer hover:border-brand-blue/30 hover:shadow-md transition-all relative overflow-hidden"
         >
           {/* Top Status Line */}
           <div className="flex items-center gap-3 mb-4 md:mb-6">
@@ -151,7 +151,7 @@ export default function ActionCenter({ leads, onReview }: Props) {
                 <div className="flex items-center gap-2 text-[10px] font-bold text-brand-blue uppercase tracking-widest">
                   <MessageSquare className="w-3.5 h-3.5" /> Latest Reply
                 </div>
-                <div className="text-sm text-brand-black font-medium italic leading-relaxed relative bg-gray-50/50 p-3 rounded-lg border border-gray-50">
+                <div className="text-sm text-brand-black font-medium italic leading-relaxed relative bg-gray-50 p-3 rounded-lg border border-gray-100">
                   "{lastMsg ? lastMsg.text : 'No messages'}"
                 </div>
               </div>

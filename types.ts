@@ -60,6 +60,7 @@ export type Lead = {
   service?: string | null;
   saleAmount?: number | null;
   notes?: string;
+  callSummary?: string | null;
   messages: Message[];
   callAttempts: CallAttempt[];
   lastEmail?: EmailLog | null;

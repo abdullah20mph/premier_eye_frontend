@@ -196,6 +196,11 @@ export default function AICallsPage({ leads, onSelectLead }: Props) {
             </button>
           </div>
         )}
+        {timedOut && (
+          <div className="mt-2 text-[11px] font-semibold text-amber-600 bg-amber-50 border border-amber-200 px-3 py-2 rounded-lg inline-flex items-center gap-2">
+            Live feed slow. Showing local call attempts instead.
+          </div>
+        )}
       </div>
 
       {/* Filters */}
@@ -286,28 +291,32 @@ export default function AICallsPage({ leads, onSelectLead }: Props) {
                     </div>
                   </div>
 
-                  {/* Summary (Grows Full space + multi-line) */}
-                  <div className="flex-1 text-xs text-gray-500 leading-snug whitespace-normal">
-                    {call.summary || "No summary available"}
-                  </div>
-
+                {/* Summary (Grows Full space + multi-line) */}
+                <div className="flex-1 text-xs text-gray-500 leading-snug whitespace-normal">
+                  {call.summary || "No summary available"}
                 </div>
 
-                {/* ⭐ ALWAYS VISIBLE RECORDING BUTTON */}
-                <div className="shrink-0">
-                  {call.callUrl && (
-                    <button
-                      className="p-1.5 bg-gray-200 hover:bg-brand-black hover:text-white rounded-full text-gray-500"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        window.open(call.callUrl!, "_blank");
-                      }}
-                    >
-                      <Play className="w-3 h-3" />
-                    </button>
-                    
-                  )}
-                </div>
+              </div>
+
+              {/* Recording CTA */}
+              <div className="shrink-0 flex items-center">
+                {call.callUrl ? (
+                  <button
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border-2 border-brand-blue bg-brand-blue/15 text-brand-black font-semibold text-[11px] hover:bg-brand-blue hover:text-brand-black shadow-sm transition"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open(call.callUrl!, "_blank");
+                    }}
+                  >
+                    <Play className="w-3.5 h-3.5" />
+                    Play recording
+                  </button>
+                ) : (
+                  <span className="text-[11px] text-gray-400 italic px-2 py-1 rounded-full border border-dashed border-gray-200">
+                    No recording
+                  </span>
+                )}
+              </div>
 
               </div>
             ))}

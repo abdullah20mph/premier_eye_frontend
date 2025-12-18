@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Lead, InsuranceOption, LeadStatus, LocationOptions, LocationOption } from '../types';
-import { X, Calendar as CalendarIcon, DollarSign, Phone, Mail, User, FileText, MessageSquare, PlayCircle, ChevronLeft, ChevronRight, Clock, MapPin } from 'lucide-react';
+import { X, Calendar as CalendarIcon, DollarSign, Phone, Mail, User, FileText, MessageSquare, PlayCircle, ChevronLeft, ChevronRight, Clock, MapPin, Maximize2, Minimize2 } from 'lucide-react';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, setHours, setMinutes, isToday } from 'date-fns';
 import { createAppointmentFromLead } from "../services/appointments";
 
@@ -14,6 +14,7 @@ type Props = {
 export default function LeadDetailModal({ lead, onClose, onSave }: Props) {
     const [draft, setDraft] = useState<Partial<Lead>>({});
     const [customInsurance, setCustomInsurance] = useState(false);
+    const [isFullScreen, setIsFullScreen] = useState(false);
 
     // Calendar State
     const [viewDate, setViewDate] = useState(new Date());
@@ -30,6 +31,7 @@ export default function LeadDetailModal({ lead, onClose, onSave }: Props) {
             name: lead.name,
             email: lead.email,
             location: lead.location,
+            callSummary: lead.callSummary ?? null,
         });
         if (lead.insurance && !InsuranceOption.includes(lead.insurance as any)) {
             setCustomInsurance(true);
@@ -95,7 +97,7 @@ export default function LeadDetailModal({ lead, onClose, onSave }: Props) {
             />
 
             {/* Modal Panel - Full screen on mobile, Card on desktop */}
-            <div className="relative bg-[#F2F5F7] sm:rounded-2xl shadow-2xl w-full max-w-5xl h-[100dvh] sm:h-auto sm:max-h-[90vh] flex flex-col overflow-hidden border border-white/50">
+            <div className={`relative bg-[#F2F5F7] shadow-2xl w-full ${isFullScreen ? "h-[100dvh] max-w-none sm:max-h-none sm:rounded-none" : "max-w-5xl h-[100dvh] sm:h-auto sm:max-h-[90vh] sm:rounded-2xl"} flex flex-col overflow-hidden border border-white/50 transition-all duration-200`}>
 
                 {/* Header */}
                 <div className="flex flex-row items-center justify-between px-4 sm:px-6 py-4 sm:py-5 bg-white border-b border-gray-200 shrink-0">
@@ -138,13 +140,22 @@ export default function LeadDetailModal({ lead, onClose, onSave }: Props) {
                         </div>
                     </div>
 
-                    <button
-                        onClick={onClose}
-                        className="p-2 ml-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition shrink-0"
-                        aria-label="Close"
-                    >
-                        <X className="w-5 h-5 sm:w-6 sm:h-6" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setIsFullScreen((v) => !v)}
+                            className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition shrink-0"
+                            aria-label={isFullScreen ? "Exit full screen" : "Enter full screen"}
+                        >
+                            {isFullScreen ? <Minimize2 className="w-5 h-5 sm:w-6 sm:h-6" /> : <Maximize2 className="w-5 h-5 sm:w-6 sm:h-6" />}
+                        </button>
+                        <button
+                            onClick={onClose}
+                            className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition shrink-0"
+                            aria-label="Close"
+                        >
+                            <X className="w-5 h-5 sm:w-6 sm:h-6" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Scrollable Content */}
@@ -376,6 +387,26 @@ export default function LeadDetailModal({ lead, onClose, onSave }: Props) {
 
                         {/* Right Column: Communication History */}
                         <div className="space-y-6">
+
+                            {/* Call Summary */}
+                            <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-sm">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-2 text-brand-black font-bold">
+                                        <Phone className="w-5 h-5" />
+                                        <h3>Call Summary</h3>
+                                    </div>
+                                    
+                                </div>
+                                {lead.callSummary ? (
+                                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-100 text-sm text-gray-700 leading-relaxed">
+                                        {lead.callSummary}
+                                    </div>
+                                ) : (
+                                    <div className="text-sm text-gray-400 italic text-center py-4">
+                                        No call summary recorded.
+                                    </div>
+                                )}
+                            </div>
 
                             {/* AI Calls */}
                             <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-sm">

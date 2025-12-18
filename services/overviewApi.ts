@@ -11,6 +11,8 @@ function mapOverviewItemToLead(item: any): Lead {
     phone: item.lead_number ?? "",
     location: item.location_preference ?? "",
     source: item.source ?? "",
+    dob: item.dob ?? null,
+    insurance: item.insurance ?? null,
 
     // we only show “Needs VA Follow-Up” in ActionCenter
     status: "Needs VA Follow-Up",
@@ -19,10 +21,12 @@ function mapOverviewItemToLead(item: any): Lead {
     dateCaptured: item.created_at ?? new Date().toISOString(),
 
     // used by ActionCenter: lastCall.summary + ts
+    callSummary: item.call_summary ?? null,
+
     callAttempts: [
       {
         ts: item.created_at ?? new Date().toISOString(),
-        summary: item.ai_summary ?? "",
+        summary: item.call_summary ?? "",
       } as any, // we only need ts + summary in UI
     ],
 

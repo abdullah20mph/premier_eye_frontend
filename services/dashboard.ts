@@ -11,6 +11,9 @@ type BackendRecentLead = {
   source: string | null;
   pipeline_stage: string | null;
   ai_summary: string | null;
+  dob?: string | null;
+  insurance?: string | null;
+  call_summary?: string | null;
   latest_reply: string | null;
   created_at: string | null;
   timestamp: string | null;
@@ -81,6 +84,9 @@ export async function fetchRecentActivityLeads(): Promise<Lead[]> {
       appointmentDate: appointmentDate,                        // 👈 now populated
       saleAmount: row.saleAmount ?? null,
       notes: row.notes ?? row.ai_summary ?? "",
+      callSummary: row.call_summary ?? null,
+      dob: row.dob ?? null,
+      insurance: row.insurance ?? null,
 
       dateCaptured: ts,
       callAttempts,

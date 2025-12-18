@@ -323,6 +323,57 @@ export default function App() {
     setIsMobileMenuOpen(false);
   };
 
+  // ========== EXPORT HELPERS ==========
+  const handleExportRecent = () => {
+    const rows = (recentLeads.length ? recentLeads : leads) || [];
+    if (!rows.length) {
+      toast.error("No recent activity to export.");
+      return;
+    }
+
+    const headers = [
+      "Name",
+      "Phone",
+      "Email",
+      "Status",
+      "Source",
+      "Location",
+      "Appointment Date",
+      "Captured At",
+    ];
+
+    const csv = [
+      headers.join(","),
+      ...rows.map((l) => {
+        const appt = l.appointmentDate
+          ? new Date(l.appointmentDate).toISOString()
+          : "";
+        const captured = (l as any).created_at || l.dateCaptured || "";
+        return [
+          `"${(l.name || "").replace(/"/g, '""')}"`,
+          `"${(l.phone || "").replace(/"/g, '""')}"`,
+          `"${(l.email || "").replace(/"/g, '""')}"`,
+          `"${(l.status || "").replace(/"/g, '""')}"`,
+          `"${(l.source || "").replace(/"/g, '""')}"`,
+          `"${(l.location || "").replace(/"/g, '""')}"`,
+          `"${appt}"`,
+          `"${captured}"`,
+        ].join(",");
+      }),
+    ].join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "recent_activity.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success("Recent activity CSV exported.");
+  };
+
   // ===================== IF NOT AUTHENTICATED =====================
   if (!token) {
     return (
@@ -497,7 +548,10 @@ export default function App() {
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-3">
                 <h2 className="text-lg md:text-xl font-bold text-brand-black">Recent Activity</h2>
                 <div className="flex gap-2 w-full sm:w-auto">
-                  <button className="w-full sm:w-auto text-center text-sm font-semibold text-brand-black bg-white px-4 py-2 rounded-full border border-gray-200 hover:bg-gray-50 transition shadow-sm">
+                  <button
+                    onClick={handleExportRecent}
+                    className="w-full sm:w-auto text-center text-sm font-semibold text-brand-black bg-white px-4 py-2 rounded-full border border-gray-200 hover:bg-gray-50 transition shadow-sm"
+                  >
                     Export CSV
                   </button>
                 </div>
